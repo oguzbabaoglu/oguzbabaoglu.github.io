@@ -1,0 +1,149 @@
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Espresso: Unlock and wake device</title>
+    <meta name="description" content="">
+
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="shortcut icon" href="../favicon.ico">
+
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Merriweather:400,700,400italic,700italic%7COpen+Sans:400italic,700italic,700,400">
+    <link rel="stylesheet" type="text/css" href="../assets/css/screen.css?v=535ee75f01">
+
+    <link rel="canonical" href="http://oguzbabaoglu.com/espresso-unlock-and-wake-device-before-test/">
+    <meta name="referrer" content="origin">
+    
+    <meta property="og:site_name" content="Android dev. blog">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Espresso: Unlock and wake device">
+    <meta property="og:description" content="When testing on an emulator or a real device, Espresso requires the device to be unlocked and awake to run. We want to automate this process. A quick search on the web will bring up solutions involving the use of...">
+    <meta property="og:url" content="http://oguzbabaoglu.com/espresso-unlock-and-wake-device-before-test/">
+    <meta property="article:published_time" content="2016-02-10T21:27:46.872Z">
+    <meta property="article:modified_time" content="2016-02-10T23:37:51.422Z">
+    
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Espresso: Unlock and wake device">
+    <meta name="twitter:description" content="When testing on an emulator or a real device, Espresso requires the device to be unlocked and awake to run. We want to automate this process. A quick search on the web will bring up solutions involving the use of...">
+    <meta name="twitter:url" content="http://oguzbabaoglu.com/espresso-unlock-and-wake-device-before-test/">
+    
+    <script type="application/ld+json">
+{
+    "@context": "http://schema.org",
+    "@type": "Article",
+    "publisher": "Android dev. blog",
+    "author": {
+        "@type": "Person",
+        "name": "Oguz Babaoglu",
+        "url": "http://oguzbabaoglu.com/author/oguz",
+        "sameAs": null,
+        "description": null
+    },
+    "headline": "Espresso: Unlock and wake device",
+    "url": "http://oguzbabaoglu.com/espresso-unlock-and-wake-device-before-test/",
+    "datePublished": "2016-02-10T21:27:46.872Z",
+    "dateModified": "2016-02-10T23:37:51.422Z",
+    "description": "When testing on an emulator or a real device, Espresso requires the device to be unlocked and awake to run. We want to automate this process. A quick search on the web will bring up solutions involving the use of..."
+}
+    </script>
+
+    <meta name="generator" content="Ghost 0.7">
+    <link rel="alternate" type="application/rss+xml" title="Android dev. blog" href="http://oguzbabaoglu.com/rss/">
+</head>
+<body class="post-template  noimage">
+
+    
+
+
+    <article role="main" class="">
+        <header>
+            <a href="http://oguzbabaoglu.com" id="home_link">«</a>
+            <div class="meta"><time datetime="2016-02-10"><a href="index.html">February 10, 2016</a></time> <span class="count" id="js-reading-time"></span></div>
+            <h1>Espresso: Unlock and wake device</h1>
+        </header>
+
+        <div class="text" id="js-post-content">
+            <p>When testing on an emulator or a real device, Espresso requires the device to be unlocked and awake to run. We want to automate this process.</p>
+
+<p>A quick search on the web will bring up solutions involving the use of <a href="http://developer.android.com/reference/android/os/PowerManager.html">PowerManager</a> and <a href="http://developer.android.com/reference/android/app/KeyguardManager.html">KeyguardManager</a>. This is the method used in the popular reference app <a href="https://github.com/JakeWharton/u2020">u2020</a>. You can see the code in <a href="https://github.com/JakeWharton/u2020/blob/master/src/androidTestInternal/java/com/jakewharton/u2020/U2020TestRunner.java">U2020TestRunner.java</a>.</p>
+
+<script src="https://gist.github.com/oguzbabaoglu/ff01f98d8527a07ae029.js"></script>
+
+<p>If you use this code in your project you will see that it is crossed out, since these methods were <strong>deprecated</strong> back in API 13 and 17 respectively. What's more of a hassle is that they require special manifest permissions; <a href="http://developer.android.com/reference/android/Manifest.permission.html#DISABLE_KEYGUARD"><code>DISABLE_KEYGUARD</code></a> and <a href="http://developer.android.com/reference/android/Manifest.permission.html#WAKE_LOCK"><code>WAKE_LOCK</code></a>.</p>
+
+<p>Deprecation notes suggest using the Window flags <a href="http://developer.android.com/reference/android/view/WindowManager.LayoutParams.html#FLAG_DISMISS_KEYGUARD"><code>FLAG_DISMISS_KEYGUARD</code></a> and <a href="http://developer.android.com/reference/android/view/WindowManager.LayoutParams.html#FLAG_KEEP_SCREEN_ON"><code>FLAG_KEEP_SCREEN_ON</code></a> instead. Let's try that.</p>
+
+<p>Since every Activity has its own Window, we will have to add them for each instance under test. We will use <a href="http://developer.android.com/reference/android/support/test/runner/lifecycle/ActivityLifecycleMonitor.html">ActivityLifecycleMonitor</a> to hook into the test Activity lifecycle and add the flags before they are created.</p>
+
+<p>We will register this lifecycle listener in the <code>onCreate</code> method of a custom runner.</p>
+
+<script src="https://gist.github.com/oguzbabaoglu/180f83264f31d3cbee16.js"></script>
+
+<p>We configure gradle to use this Runner implementation with our tests using <code>testInstrumentationRunner "com.your.package.CustomJUnitRunner"</code></p>
+
+<p><strong>And that's it!</strong> All Activity instances launched by this Runner will have the necessary flags set. This ensures your device is awake for the full duration of your tests without any special permissions or relying on deprecated methods.</p>
+
+<p><code>PS:</code> Note that <a href="http://developer.android.com/reference/android/view/WindowManager.LayoutParams.html#FLAG_DISMISS_KEYGUARD"><code>FLAG_DISMISS_KEYGUARD</code></a> does not work with a password or pattern protected lock screen. </p>
+        </div>
+
+    </article>
+
+    <div id="post_nav">
+        <nav role="navigation">
+            <span style="font-size: 70%">Created with <a href="https://ghost.org">Ghost</a> - by Oguz Babaoglu ©2016</span>
+        </nav>
+    </div>
+
+
+
+
+
+    <script>
+
+            function get_text(el) {
+                ret = "";
+                var length = el.childNodes.length;
+                for(var i = 0; i < length; i++) {
+                    var node = el.childNodes[i];
+                    if(node.nodeType != 8) {
+                        ret += node.nodeType != 1 ? node.nodeValue : get_text(node);
+                    }
+                }
+                return ret;
+            }
+            function reading_time () {
+                var post_content = document.getElementById('js-post-content');
+                if (post_content) {
+                    var words = get_text(post_content),
+                        count = words.split(/\s+/).length,
+                        read_time = Math.ceil((count / 150)),
+                        read_time_node = document.createTextNode(read_time + ' min read');
+                    document.getElementById('js-reading-time').appendChild(read_time_node);
+                }
+            }
+
+        function no_schema_links () {
+            var links = document.querySelectorAll('.js-remove-domain-schema');
+            if (links) {
+                for (i = 0; i < links.length; ++i) {
+                    var link = links[i],
+                        text = link.innerHTML,
+                        no_schema = text.replace(/.*?:\/\//g, "");
+                    link.innerHTML = no_schema;
+                }
+            }
+        }
+
+        window.onload = function () {
+            no_schema_links();
+
+            reading_time();
+        }
+    </script>
+
+    
+
+</body>
