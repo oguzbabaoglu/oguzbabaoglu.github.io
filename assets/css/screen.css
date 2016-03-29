@@ -391,7 +391,7 @@ body.noimage {
     position: absolute;
 }
 article {
-    margin: 65px auto 0 auto;
+    margin: 65px auto 50px auto;
     padding: 0 30px;
     max-width: 680px;
     text-align: left
